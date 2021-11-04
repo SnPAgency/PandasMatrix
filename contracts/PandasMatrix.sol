@@ -68,8 +68,8 @@ contract PandasMatrix {
                 players[userAddress].p5Matrix[level].closedPart);
     }
     //checks if the user already exists
-    function isUserExists(address user) public view returns (bool) {
-        return (players[user].id != 0);
+    function isUserExists(address player) public view returns (bool) {
+        return (players[player].id != 0);
     }
 
 }
