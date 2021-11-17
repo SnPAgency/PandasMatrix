@@ -202,7 +202,7 @@ contract PandasMatrix is ReentrancyGuard {
             emit NewUserPlace(userAddress, referrerAddress, 1, level, uint8(players[referrerAddress].p4Matrix[level].referrals.length));
             return sendTrnReturns(referrerAddress, userAddress, 2, level);
         }
-        if (players[referrerAddress].p5Matrix[level].p5referrals.length == 6) {
+        if (players[referrerAddress].p5Matrix[level].p5referrals.length == 5) {
             emit NewUserPlace(userAddress, referrerAddress, 1, level, uint8(players[referrerAddress].p4Matrix[level].referrals.length));
             return sendTrnReturns(players[referrerAddress].referrer, userAddress, 2, level);
         }
