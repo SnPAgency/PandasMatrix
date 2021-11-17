@@ -54,7 +54,7 @@ contract PandasMatrix is ReentrancyGuard {
     event SentExtraTronDividends(address indexed from, address indexed receiver, uint8 matrix, uint8 level);
 
     constructor(address ownerAddress) {
-        levelPrice[1] =200*1e18;
+        levelPrice[1] = 200*1e18;
         for (uint8 i = 2; i <= SLOT_FINAL_LEVEL; i++) {
             levelPrice[i] = levelPrice[i-1] * 2;
         }
@@ -198,12 +198,22 @@ contract PandasMatrix is ReentrancyGuard {
     function updatep5Referrer(address userAddress, address referrerAddress, uint8 level) private {
         players[referrerAddress].p5Matrix[level].p5referrals.push(userAddress);
 
-        if (players[referrerAddress].p5Matrix[level].p5referrals.length < 6) {
+        if (players[referrerAddress].p5Matrix[level].p5referrals.length <= 4) {
             emit NewUserPlace(userAddress, referrerAddress, 1, level, uint8(players[referrerAddress].p4Matrix[level].referrals.length));
-            return sendTrnReturns(referrerAddress, userAddress, 1, level);
+            return sendTrnReturns(referrerAddress, userAddress, 2, level);
+        }
+        if (players[referrerAddress].p5Matrix[level].p5referrals.length == 6) {
+            emit NewUserPlace(userAddress, referrerAddress, 1, level, uint8(players[referrerAddress].p4Matrix[level].referrals.length));
+            return sendTrnReturns(players[referrerAddress].referrer, userAddress, 2, level);
+        }
+        if (players[referrerAddress].p5Matrix[level].p5referrals.length == 6) {
+            emit NewUserPlace(userAddress, referrerAddress, 1, level, uint8(players[referrerAddress].p4Matrix[level].referrals.length));
+            return sendTrnReturns(players[players[referrerAddress].referrer].referrer, userAddress, 2, level);
         }
         
-        emit NewUserPlace(userAddress, referrerAddress, 1, level, 3);
+        
+        
+        emit NewUserPlace(userAddress, referrerAddress, 2, level, 6);
         //close matrix
         players[referrerAddress].p5Matrix[level].p5referrals = new address[](0);
         if (!players[referrerAddress].activeP5Levels[level+1] && level != SLOT_FINAL_LEVEL) {
@@ -236,6 +246,7 @@ contract PandasMatrix is ReentrancyGuard {
             
             userAddress = players[userAddress].referrer;
         }
+        return userAddress;
     }
 
     function findFreep5Referrer(address userAddress, uint8 level) public view returns(address) {
@@ -246,6 +257,7 @@ contract PandasMatrix is ReentrancyGuard {
             
             userAddress = players[userAddress].referrer;
         }
+        return userAddress;
     }
 
     function seekTronReceiver(address userAddress, address _from, uint8 matrix, uint8 level) private returns(address, bool) {
