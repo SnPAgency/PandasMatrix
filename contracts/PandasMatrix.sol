@@ -1,10 +1,9 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.6;
 
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
-contract PandasMatrix is ReentrancyGuard {
+contract PandasMatrix {
 
     struct Player {
         uint id;
@@ -38,14 +37,20 @@ contract PandasMatrix is ReentrancyGuard {
     mapping(address => Player) public players;
     mapping(uint => address) public idToAddress;
     mapping(uint => address) public userIds;
-    mapping(address => uint) public balances; 
+    mapping(address => uint) public balances;
+    address[] public spillReceivers;
 
     uint public lastUserId = 2;
     address public owner;
     
     mapping(uint8 => uint) public levelPrice;
+
+    mapping (uint8 => mapping (uint8 => uint)) matrixLevelPrice;
+    
+    uint256 public globalSpills;
     
     //Events
+    event AmountSent(uint amount, address indexed sender);
     event SignUp(address indexed player, address indexed referrer, uint indexed userId, uint referrerId);
     event Reinvest(address indexed player, address indexed currentReferrer, address indexed caller, uint8 matrix, uint8 level);
     event Upgrade(address indexed player, address indexed referrer, uint8 matrix, uint8 level);
@@ -54,10 +59,40 @@ contract PandasMatrix is ReentrancyGuard {
     event SentExtraTronDividends(address indexed from, address indexed receiver, uint8 matrix, uint8 level);
 
     constructor(address ownerAddress) {
-        levelPrice[1] = 200*1e18;
-        for (uint8 i = 2; i <= SLOT_FINAL_LEVEL; i++) {
-            levelPrice[i] = levelPrice[i-1] * 2;
-        }
+
+        matrixLevelPrice[1][1] = 60 * 10 **18;
+        matrixLevelPrice[1][2] = 120 * 10 **18;
+        matrixLevelPrice[1][3] = 200 * 10 **18;
+        matrixLevelPrice[1][4] = 400 * 10 **18;
+        matrixLevelPrice[1][5] = 500 * 10 **18;
+        matrixLevelPrice[1][6] = 700 * 10 **18;
+        matrixLevelPrice[1][7] = 1000 * 10 **18;
+        matrixLevelPrice[1][8] = 1500 * 10 **18;
+        matrixLevelPrice[1][9] = 2000 * 10 **18;
+        matrixLevelPrice[1][10] = 3000 * 10 **18;
+        matrixLevelPrice[1][11] = 4000 * 10 **18;
+        matrixLevelPrice[1][12] = 7000 * 10 **18;
+        matrixLevelPrice[1][13] = 8000 * 10 **18;
+        matrixLevelPrice[1][14] = 10500 * 10 **18;
+        matrixLevelPrice[1][14] = 12000 * 10 **18;
+
+        matrixLevelPrice[2][1] = 50 * 10 **18;
+        matrixLevelPrice[2][2] = 80 * 10 **18;
+        matrixLevelPrice[2][3] = 100 * 10 **18;
+        matrixLevelPrice[2][4] = 200 * 10 **18;
+        matrixLevelPrice[2][5] = 300 * 10 **18;
+        matrixLevelPrice[2][6] = 500 * 10 **18;
+        matrixLevelPrice[2][7] = 800 * 10 **18;
+        matrixLevelPrice[2][8] = 1000 * 10 **18;
+        matrixLevelPrice[2][9] = 1500 * 10 **18;
+        matrixLevelPrice[2][10] = 2000 * 10 **18;
+        matrixLevelPrice[2][11] = 3000 * 10 **18;
+        matrixLevelPrice[2][12] = 5000 * 10 **18;
+        matrixLevelPrice[2][13] = 6000 * 10 **18;
+        matrixLevelPrice[2][14] = 8000 * 10 **18;
+        matrixLevelPrice[2][15] = 10000 * 10 **18;
+
+
         
         owner = ownerAddress;
         
@@ -73,8 +108,11 @@ contract PandasMatrix is ReentrancyGuard {
         }
         userIds[1] = ownerAddress;
     }
+    
+    
     function registration(address userAddress, address referrerAddress) private {
-        require(msg.value == levelPrice[1]*2, "registration cost 200Trn");
+        require(msg.value >= matrixLevelPrice[1][1] + matrixLevelPrice[2][1]);
+        //require(msg.value == levelPrice[1]*2, "registration cost 200Trn");
         require(!isPlatformUser(userAddress), "user exists");
         require(isPlatformUser(referrerAddress), "referrer not exists");
         
@@ -104,32 +142,38 @@ contract PandasMatrix is ReentrancyGuard {
 
         address freep4Referrer = findFreep4Referrer(userAddress, 1);
         players[userAddress].p4Matrix[1].firstReferrer = freep4Referrer;
+        globalSpills += (matrixLevelPrice[1][1] + matrixLevelPrice[2][1])/10;
         
         
         updatep4Referrer(userAddress, freep4Referrer, 1);
 
         updatep5Referrer(userAddress, findFreep5Referrer(userAddress, 1), 1);
+        payable(owner).transfer(((matrixLevelPrice[1][1] + matrixLevelPrice[2][1]) *2)/10);
         
         emit SignUp(userAddress, referrerAddress, players[userAddress].id, players[referrerAddress].id);
     }
 
-    function rg() external payable {
+    fallback() external payable {
         if(msg.data.length == 0) {
             return registration(msg.sender, owner);
         }
         
         registration(msg.sender, bytesToAddress(msg.data));
     }
+    
+    receive() external payable {
+        emit AmountSent(msg.value, msg.sender);
+    }
 
-    function registrationExt(address referrerAddress) external payable nonReentrant {
+    function registrationExt(address referrerAddress) external payable {
         registration(msg.sender, referrerAddress);
     }
 
 
-    function buyNewLevel(uint8 matrix, uint8 level) external payable nonReentrant {
+    function buyNewLevel(uint8 matrix, uint8 level) external payable {
         require(isPlatformUser(msg.sender), "register first");
         require(matrix == 1 || matrix == 2, "invalid choice");
-        require(msg.value == levelPrice[level], "invalid amount");
+        require(msg.value >= matrixLevelPrice[matrix][level]);
         require(level > 1 && level <= SLOT_FINAL_LEVEL, "invalid level");
 
         if (matrix == 1) {
@@ -160,6 +204,11 @@ contract PandasMatrix is ReentrancyGuard {
             
             emit Upgrade(msg.sender, freep5Referrer, 2, level);
         }
+        globalSpills += (matrixLevelPrice[matrix][level]/10);
+        if (level >= 3){
+            spillReceivers.push(msg.sender);
+        }
+        payable(owner).transfer((matrixLevelPrice[matrix][level] * 2)/10);
     }
 
     function updatep4Referrer(address userAddress, address referrerAddress, uint8 level) private {
@@ -259,6 +308,14 @@ contract PandasMatrix is ReentrancyGuard {
         }
         return userAddress;
     }
+    
+    function giveSpills() public {
+        require(msg.sender == owner);
+        for (uint i = 0; i < spillReceivers.length; i++) {
+            payable(spillReceivers[i]).transfer(globalSpills/spillReceivers.length);
+        }
+        delete spillReceivers;
+    }
 
     function seekTronReceiver(address userAddress, address _from, uint8 matrix, uint8 level) private returns(address, bool) {
         address receiver = userAddress;
@@ -284,18 +341,29 @@ contract PandasMatrix is ReentrancyGuard {
                 }
             }
         }
+        return(receiver, isExtraDividends);
     }
 
     function sendTrnReturns(address userAddress, address _from, uint8 matrix, uint8 level) private {
         (address receiver, bool isExtraDividends) = seekTronReceiver(userAddress, _from, matrix, level);
 
-        if (!payable(address(uint160(receiver))).send(levelPrice[level])) {
-            return payable(address(uint160(receiver))).transfer(address(this).balance);
+
+    //****************************************************************************************///
+        if (!payable(address(uint160(receiver))).send((matrixLevelPrice[matrix][level] *6) /10 )) {
+            return payable(address(uint160(receiver))).transfer((matrixLevelPrice[matrix][level] *6) /10);
         }
         
         if (isExtraDividends) {
             emit SentExtraTronDividends(_from, receiver, matrix, level);
         }
+    }
+    
+    function getNumberOfP4Referers(address player, uint8 level) public view returns(uint) {
+        return players[player].p4Matrix[level].referrals.length;
+    }
+
+    function getNumberOfP5Referers(address player, uint8 level) public view returns(uint) {
+        return players[player].p5Matrix[level].p5referrals.length;
     }
 
 
