@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.7;
 
 
 contract PandasMatrix {
@@ -60,37 +60,37 @@ contract PandasMatrix {
 
     constructor(address ownerAddress) {
 
-        matrixLevelPrice[1][1] = 60 * 10 **18;
-        matrixLevelPrice[1][2] = 120 * 10 **18;
-        matrixLevelPrice[1][3] = 200 * 10 **18;
-        matrixLevelPrice[1][4] = 400 * 10 **18;
-        matrixLevelPrice[1][5] = 500 * 10 **18;
-        matrixLevelPrice[1][6] = 700 * 10 **18;
-        matrixLevelPrice[1][7] = 1000 * 10 **18;
-        matrixLevelPrice[1][8] = 1500 * 10 **18;
-        matrixLevelPrice[1][9] = 2000 * 10 **18;
-        matrixLevelPrice[1][10] = 3000 * 10 **18;
-        matrixLevelPrice[1][11] = 4000 * 10 **18;
-        matrixLevelPrice[1][12] = 7000 * 10 **18;
-        matrixLevelPrice[1][13] = 8000 * 10 **18;
-        matrixLevelPrice[1][14] = 10500 * 10 **18;
-        matrixLevelPrice[1][14] = 12000 * 10 **18;
+        matrixLevelPrice[1][1] = 60 ether;
+        matrixLevelPrice[1][2] = 120 ether;
+        matrixLevelPrice[1][3] = 200 ether;
+        matrixLevelPrice[1][4] = 400 ether;
+        matrixLevelPrice[1][5] = 500 ether;
+        matrixLevelPrice[1][6] = 700 ether;
+        matrixLevelPrice[1][7] = 1000 ether;
+        matrixLevelPrice[1][8] = 1500 ether;
+        matrixLevelPrice[1][9] = 2000 ether;
+        matrixLevelPrice[1][10] = 3000 ether;
+        matrixLevelPrice[1][11] = 4000 ether;
+        matrixLevelPrice[1][12] = 7000 ether;
+        matrixLevelPrice[1][13] = 8000 ether;
+        matrixLevelPrice[1][14] = 10000 ether;
+        matrixLevelPrice[1][14] = 12000 ether;
 
-        matrixLevelPrice[2][1] = 50 * 10 **18;
-        matrixLevelPrice[2][2] = 80 * 10 **18;
-        matrixLevelPrice[2][3] = 100 * 10 **18;
-        matrixLevelPrice[2][4] = 200 * 10 **18;
-        matrixLevelPrice[2][5] = 300 * 10 **18;
-        matrixLevelPrice[2][6] = 500 * 10 **18;
-        matrixLevelPrice[2][7] = 800 * 10 **18;
-        matrixLevelPrice[2][8] = 1000 * 10 **18;
-        matrixLevelPrice[2][9] = 1500 * 10 **18;
-        matrixLevelPrice[2][10] = 2000 * 10 **18;
-        matrixLevelPrice[2][11] = 3000 * 10 **18;
-        matrixLevelPrice[2][12] = 5000 * 10 **18;
-        matrixLevelPrice[2][13] = 6000 * 10 **18;
-        matrixLevelPrice[2][14] = 8000 * 10 **18;
-        matrixLevelPrice[2][15] = 10000 * 10 **18;
+        matrixLevelPrice[2][1] = 50 ether;
+        matrixLevelPrice[2][2] = 80 ether;
+        matrixLevelPrice[2][3] = 100 ether;
+        matrixLevelPrice[2][4] = 200 ether;
+        matrixLevelPrice[2][5] = 300 ether;
+        matrixLevelPrice[2][6] = 500 ether;
+        matrixLevelPrice[2][7] = 800 ether;
+        matrixLevelPrice[2][8] = 1000 ether;
+        matrixLevelPrice[2][9] = 1500 ether;
+        matrixLevelPrice[2][10] = 2000 ether;
+        matrixLevelPrice[2][11] = 3000 ether;
+        matrixLevelPrice[2][12] = 5000 ether;
+        matrixLevelPrice[2][13] = 6000 ether;
+        matrixLevelPrice[2][14] = 800 ether;
+        matrixLevelPrice[2][15] = 10000 ether;
 
 
         
@@ -149,6 +149,12 @@ contract PandasMatrix {
 
         updatep5Referrer(userAddress, findFreep5Referrer(userAddress, 1), 1);
         payable(owner).transfer(((matrixLevelPrice[1][1] + matrixLevelPrice[2][1]) *2)/10);
+
+        if(players[msg.sender].referrer != owner) {
+            payable(upLineUpLine(msg.sender)).transfer((matrixLevelPrice[1][1] + matrixLevelPrice[2][1])/10);
+        } else {
+            globalSpills += (matrixLevelPrice[1][1] + matrixLevelPrice[2][1])/10;
+        }
         
         emit SignUp(userAddress, referrerAddress, players[userAddress].id, players[referrerAddress].id);
     }
@@ -209,6 +215,17 @@ contract PandasMatrix {
             spillReceivers.push(msg.sender);
         }
         payable(owner).transfer((matrixLevelPrice[matrix][level] * 2)/10);
+        if(players[msg.sender].referrer != owner) {
+            payable(upLineUpLine(msg.sender)).transfer((matrixLevelPrice[matrix][level])/10);
+        } else {
+            globalSpills += (matrixLevelPrice[matrix][level])/10;
+        }
+    }
+
+    function upLineUpLine(address playerAdd) private view returns(address) {
+        address upline = players[playerAdd].referrer;
+        return players[upline].referrer;
+        
     }
 
     function updatep4Referrer(address userAddress, address referrerAddress, uint8 level) private {
