@@ -38,7 +38,9 @@ contract PandasMatrix {
     mapping(uint => address) public idToAddress;
     mapping(uint => address) public userIds;
     mapping(address => uint) public balances;
-    address[] public spillReceivers;
+    //address[] public spillReceivers;
+
+    mapping(uint => address[]) public roundSpillReceivers;
 
     uint public lastUserId = 2;
     address public owner;
@@ -46,8 +48,12 @@ contract PandasMatrix {
     mapping(uint8 => uint) public levelPrice;
 
     mapping (uint8 => mapping (uint8 => uint)) matrixLevelPrice;
-    
-    uint256 public globalSpills;
+    mapping (uint => uint) public roundGlobalSpills;
+
+    uint public gsRound;
+
+    mapping(uint => uint) public roundStartTime;
+    //uint256 public globalSpills;
     
     //Events
     event AmountSent(uint amount, address indexed sender);
@@ -93,7 +99,10 @@ contract PandasMatrix {
         matrixLevelPrice[2][15] = 10000 ether;
 
 
-        
+        gsRound = 1;
+
+        roundStartTime[gsRound] = block.timestamp;
+
         owner = ownerAddress;
         
         players[ownerAddress].id = 1;
@@ -142,18 +151,17 @@ contract PandasMatrix {
 
         address freep4Referrer = findFreep4Referrer(userAddress, 1);
         players[userAddress].p4Matrix[1].firstReferrer = freep4Referrer;
-        globalSpills += (matrixLevelPrice[1][1] + matrixLevelPrice[2][1])/10;
+        roundGlobalSpills[gsRound] += (matrixLevelPrice[1][1] + matrixLevelPrice[2][1])/10;
         
         
         updatep4Referrer(userAddress, freep4Referrer, 1);
 
         updatep5Referrer(userAddress, findFreep5Referrer(userAddress, 1), 1);
         payable(owner).transfer(((matrixLevelPrice[1][1] + matrixLevelPrice[2][1]) *2)/10);
-
         if(players[msg.sender].referrer != owner) {
             payable(upLineUpLine(msg.sender)).transfer((matrixLevelPrice[1][1] + matrixLevelPrice[2][1])/10);
         } else {
-            globalSpills += (matrixLevelPrice[1][1] + matrixLevelPrice[2][1])/10;
+            roundGlobalSpills[gsRound] += (matrixLevelPrice[1][1] + matrixLevelPrice[2][1])/10;
         }
         
         emit SignUp(userAddress, referrerAddress, players[userAddress].id, players[referrerAddress].id);
@@ -210,15 +218,15 @@ contract PandasMatrix {
             
             emit Upgrade(msg.sender, freep5Referrer, 2, level);
         }
-        globalSpills += (matrixLevelPrice[matrix][level]/10);
+        roundGlobalSpills[gsRound] += (matrixLevelPrice[matrix][level]/10);
         if (level >= 3){
-            spillReceivers.push(msg.sender);
+            roundSpillReceivers[gsRound].push(msg.sender);
         }
         payable(owner).transfer((matrixLevelPrice[matrix][level] * 2)/10);
         if(players[msg.sender].referrer != owner) {
             payable(upLineUpLine(msg.sender)).transfer((matrixLevelPrice[matrix][level])/10);
         } else {
-            globalSpills += (matrixLevelPrice[matrix][level])/10;
+            roundGlobalSpills[gsRound] += (matrixLevelPrice[matrix][level])/10;
         }
     }
 
@@ -328,10 +336,12 @@ contract PandasMatrix {
     
     function giveSpills() public {
         require(msg.sender == owner);
-        for (uint i = 0; i < spillReceivers.length; i++) {
-            payable(spillReceivers[i]).transfer(globalSpills/spillReceivers.length);
+        require(block .timestamp >= roundStartTime[gsRound] + 172800); //ensures that it can ony be called 48 hours after last call
+        for (uint i = 0; i < roundSpillReceivers[gsRound].length; i++) {
+            payable(roundSpillReceivers[gsRound][i]).transfer(roundGlobalSpills[gsRound]/roundSpillReceivers[gsRound].length);
         }
-        delete spillReceivers;
+        gsRound ++;
+        roundStartTime[gsRound] = block.timestamp;
     }
 
     function seekTronReceiver(address userAddress, address _from, uint8 matrix, uint8 level) private returns(address, bool) {
